@@ -1,5 +1,6 @@
 package org.apache.cordova.facebook;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -10,6 +11,8 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.WebView;
+
+import androidx.activity.result.ActivityResultRegistryOwner;
 
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -790,7 +793,13 @@ public class ConnectPlugin extends CordovaPlugin {
 
         // Set up the activity result callback to this class
         cordova.setActivityResultCallback(this);
-        LoginManager.getInstance().logIn(cordova.getActivity(), permissions);
+        Activity activity = cordova.getActivity();
+        if (activity instanceof ActivityResultRegistryOwner) {
+            ActivityResultRegistryOwner ativityResultRegistryOwner = (ActivityResultRegistryOwner)activity;
+            LoginManager.getInstance().logInWithReadPermissions(ativityResultRegistryOwner, callbackManager, permissions);
+        } else {
+            LoginManager.getInstance().logIn(cordova.getActivity(), permissions);
+        }
     }
 
     private void executeCheckHasCorrectPermissions(JSONArray args, CallbackContext callbackContext) throws JSONException {
