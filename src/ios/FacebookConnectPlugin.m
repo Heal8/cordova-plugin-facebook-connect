@@ -41,9 +41,21 @@
                                              selector:@selector(applicationDidBecomeActive:)
                                                  name:UIApplicationDidBecomeActiveNotification object:nil];
 
-    [[NSNotificationCenter defaultCenter] addObserver:self 
-                                         selector:@selector(handleOpenURLWithAppSourceAndAnnotation:) 
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                         selector:@selector(handleOpenURLWithAppSourceAndAnnotation:)
                                              name:CDVPluginHandleOpenURLWithAppSourceAndAnnotationNotification object:nil];
+
+    // Cordova iOS 8+ Scene lifecycle posts CDVPluginHandleOpenURLNotification
+    // instead of the deprecated CDVPluginHandleOpenURLWithAppSourceAndAnnotationNotification
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleOpenURL:)
+                                                 name:CDVPluginHandleOpenURLNotification object:nil];
+
+    // With Cordova iOS 8+ Scene lifecycle, UIApplicationDidFinishLaunchingNotification
+    // fires before plugins are loaded, so the notification listener above will miss it.
+    // Explicitly initialize the Facebook SDK here to ensure it's properly configured.
+    [[FBSDKApplicationDelegate sharedInstance] application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:@{}];
+    [FBSDKProfile enableUpdatesOnAccessTokenChange:YES];
 }
 
 - (void) applicationDidFinishLaunching:(NSNotification *) notification {
@@ -71,6 +83,14 @@
 - (void) handleOpenURLWithAppSourceAndAnnotation:(NSNotification *) notification {
     NSMutableDictionary * options = [notification object];
     NSURL* url = options[@"url"];
+
+    [[FBSDKApplicationDelegate sharedInstance] application:[UIApplication sharedApplication] openURL:url options:options];
+}
+
+// Cordova iOS 8+ Scene lifecycle handler: object is the NSURL, userInfo contains options
+- (void) handleOpenURL:(NSNotification *) notification {
+    NSURL* url = [notification object];
+    NSDictionary* options = notification.userInfo ?: @{};
 
     [[FBSDKApplicationDelegate sharedInstance] application:[UIApplication sharedApplication] openURL:url options:options];
 }

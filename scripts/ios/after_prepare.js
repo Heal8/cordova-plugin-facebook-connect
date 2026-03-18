@@ -76,9 +76,15 @@ module.exports = function (context) {
   }
 
   var getPlistPath = function () {
-    var common = context.requireCordovaModule('cordova-common'), 
-    util = context.requireCordovaModule('cordova-lib/src/cordova/util'), 
-    projectName = new common.ConfigParser(util.projectConfig(util.isCordova())).name(), 
+    // cordova-ios 8+ uses platforms/ios/App/App-Info.plist
+    var newPath = './platforms/ios/App/App-Info.plist'
+    if(fs.existsSync(newPath)) {
+      return newPath
+    }
+    // Legacy cordova-ios uses platforms/ios/<ProjectName>/<ProjectName>-Info.plist
+    var common = context.requireCordovaModule('cordova-common'),
+    util = context.requireCordovaModule('cordova-lib/src/cordova/util'),
+    projectName = new common.ConfigParser(util.projectConfig(util.isCordova())).name(),
     plistPath = './platforms/ios/' + projectName + '/' + projectName + '-Info.plist'
     return plistPath
   }
